@@ -11,7 +11,6 @@ if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
 }
 
 add_hook($login_hook, 1, function($vars){
-    $userid = 0;
     if($login_hook == 'UserLogin'){
         $currentUser = new \WHMCS\Authentication\CurrentUser;
         $client = json_decode(json_encode($currentUser->client()));
@@ -27,14 +26,29 @@ add_hook($login_hook, 1, function($vars){
                 ]);
         }
     }else{
+
         $userid = ($vars['userid'] !== NULL) ? $vars['userid'] : 0;
-        $_SESSION['g_ip_id'] = Capsule::table('g_ip_last_client_ips')
-            ->insertGetId([
-                'client_id' => $userid,
-                'ip_address' => $_SERVER['REMOTE_ADDR'],
-                'login_date' => date('Y-m-d H:i:s'),
-                'remote_port' => $_SERVER['REMOTE_PORT']
-            ]);
+        $currentUser = new \WHMCS\Authentication\CurrentUser;
+        $client = json_decode(json_encode($currentUser->client()));
+        $date = new DateTime('NOW');
+        if($client->id){
+            $userid = $client->id;
+            $_SESSION['g_ip_id'] = Capsule::table('g_ip_last_client_ips')
+                ->insertGetId([
+                    'client_id' => $userid,
+                    'ip_address' => $_SERVER['REMOTE_ADDR'],
+                    'login_date' => date('Y-m-d H:i:s'),
+                    'remote_port' => $_SERVER['REMOTE_PORT']
+                ]);
+        }else{
+            $_SESSION['g_ip_id'] = Capsule::table('g_ip_last_client_ips')
+                ->insertGetId([
+                    'client_id' => $userid,
+                    'ip_address' => $_SERVER['REMOTE_ADDR'],
+                    'login_date' => date('Y-m-d H:i:s'),
+                    'remote_port' => $_SERVER['REMOTE_PORT']
+                ]);
+        }
     }
 });
 
